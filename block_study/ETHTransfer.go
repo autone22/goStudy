@@ -68,7 +68,14 @@ func main() {
 	log.Println("接收方address:", toAddress)
 
 	// 生成未签名事务
-	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, nil)
+	tx := types.NewTx(&types.LegacyTx{
+		Nonce:    nonce,
+		To:       &toAddress,
+		Value:    value,
+		Gas:      gasLimit,
+		GasPrice: gasPrice,
+		Data:     nil,
+	})
 
 	// 发送方对交易进行签名
 	signTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
