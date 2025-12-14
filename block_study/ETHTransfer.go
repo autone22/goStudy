@@ -3,16 +3,19 @@ package main
 import (
 	"context"
 	"crypto/ecdsa"
+	"fmt"
 	"log"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/params"
 )
 
-const formPrivateKey = "xxxxxx"
+const formPrivateKey = "xxxxx"
 const toPublicKey = "0x7997135454469971a9953a7b4a39dd757a8e3fdb"
 
 func main() {
@@ -50,7 +53,7 @@ func main() {
 	log.Println("nonce:", nonce)
 
 	// 设置要转账的ETH，单位：wei
-	value := big.NewInt(10000000000000000)
+	value := big.NewInt(1000000000000000)
 
 	// 设置转账的gas上限（21000）
 	gasLimit := uint64(21000)
@@ -79,4 +82,51 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Println("交易hash:", signTx.Hash().Hex())
+
+	receipt, err := waitForTransaction(client, signTx.Hash())
+	if err != nil {
+		log.Fatal(err)
+	}
+	if receipt.Status == 1 {
+		log.Println("交易成功")
+		queryBalance(client, formAddress, toAddress)
+	} else {
+		log.Println("交易失败")
+	}
+}
+
+// waitForTransaction 等待交易被打包确认
+func waitForTransaction(client *ethclient.Client, txHash common.Hash) (*types.Receipt, error) {
+	ctx := context.Background()
+
+	// 设置超时时间（5分钟）
+	timeout := time.After(5 * time.Minute)
+	// 每3秒检查一次
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-timeout:
+			return nil, fmt.Errorf("等待交易确认超时")
+		case <-ticker.C:
+			receipt, err := client.TransactionReceipt(ctx, txHash)
+			if err == nil {
+				// 找到交易收据，说明交易已被打包
+				return receipt, nil
+			}
+			// 如果是"not found"错误，继续等待
+			log.Println("交易还未被打包，继续等待...")
+		}
+	}
+}
+
+func queryBalance(client *ethclient.Client, formAddress common.Address, toAddress common.Address) {
+	formBalance, _ := client.BalanceAt(context.Background(), formAddress, nil)
+	formBalanceEth := new(big.Float).Quo(new(big.Float).SetInt(formBalance), big.NewFloat(params.Ether))
+	log.Printf("发送方余额: %s ETH (%s wei)\n", formBalanceEth.Text('f', 6), formBalance.String())
+
+	toBalance, _ := client.BalanceAt(context.Background(), toAddress, nil)
+	toBalanceEth := new(big.Float).Quo(new(big.Float).SetInt(toBalance), big.NewFloat(params.Ether))
+	log.Printf("接收方余额: %s ETH (%s wei)\n", toBalanceEth.Text('f', 6), toBalance.String())
 }
