@@ -20,7 +20,7 @@ const toPublicKey = "0x7997135454469971a9953a7b4a39dd757a8e3fdb"
 
 func main() {
 
-	// ethclient连接到以太坊测试网
+	// ethclient连接到以太坊测试网(获取地址：https://dashboard.alchemy.com/apps/en3guczzt4qgd3rs/networks)
 	client, err := ethclient.Dial("https://sepolia.infura.io/v3/a55cbed156ef4d638210967282f99266")
 	defer client.Close()
 	if err != nil {

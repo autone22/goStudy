@@ -16,7 +16,7 @@ go get github.com/ethereum/go-ethereum
 
 - 发送方的私钥（Private Key）
 - 接收方的公钥地址（Public Address）
-- 以太坊节点RPC地址（如Infura）
+- 以太坊节点RPC/https地址（获取地址: https://dashboard.alchemy.com/apps/en3guczzt4qgd3rs/networks ）
 
 ## 转账步骤详解
 
